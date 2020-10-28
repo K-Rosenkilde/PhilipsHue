@@ -4,25 +4,31 @@ from datetime import datetime, timedelta
 from tkinter import *
 from itertools import cycle
 from phue import Bridge
+from phue import Group
+from phue import AllLights
 from huelightClass import huelights
 from TestMusic import doorbell
+
 
 import time
 import json
 import threading
 import RPi.GPIO as GPIO
+import logging
 
+LOG_FILENAME = datetime.now().strftime('logfile_%H_%M_%S_%d_%m_%Y.log')
+logging.basicConfig(filename=LOG_FILENAME, level=logging.INFO)
 
 #Init Variables
 activeBulb = 0
+
 global up # = datetime.now()
 global down # = datetime.now()
 global debug
-debug = 9 #zero no print statements,  10: All Print statements  
+debug = 8  #zero no print statements,  10: All Print statements  
 
-down = datetime.now()
-if debug > 0: print("Starting: " + str(down))
-
+# down = datetime.now()
+# if debug > 0: print("Starting: " + str(down))
 
 # Setup input Pins
 GPIO.setmode(GPIO.BCM)
@@ -50,26 +56,31 @@ GPIO.setup(20, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 print("Start lightsystem")
 
 b1 = Bridge('192.168.86.94')
-
-b2 = doorbell()
-print("Bell: " + str(b2))
-H3 = huelights()
-L1 = H3.lightslist
-
-for obj in L1:
-    print( obj.dimdirection, obj.GPIOPin, obj.lightno,  sep =' ' )
-    
-print("Index of: " + str(L1.myindex(3) ))
-
-
 # If the app is not registered and the button is not pressed, press the button $
 b1.connect()
+
+H3 = huelights()
+# hueLights = json.dumps(b1.get_light(), indent=4 )
+# print(hueLights)
+
+#lights = b1.get_light()
+#print(lights)
+
+#print("Hue Light: " + str(b1.get_light() ))
+
+#b2 = doorbell()
+#print("Bell: " + str(b2))
+
+g1 = Group(b1, 1 )
+
+allLights = AllLights(g1)
+
 
 #print(b1.ip)
 if debug > 9: print(b1.config_file_path)
 
 def getLightInfo(activeBulb):    
-    if debug > 1:
+    if debug > 9:
         allinfo = b1.get_light(activeBulb)
 #     print("getLightInfo: " , allinfo)
         name = b1.get_light(activeBulb, "name")
@@ -102,14 +113,13 @@ def getLightInfo(activeBulb):
 def onOff(activeBulb):
     print("onOff " + str(activeBulb))
     toggleState = b1.get_light(activeBulb, "on")
-    
+
     print("toggleState: " + str(toggleState))
-    if toggleState:
+    if toggleState:     
         b1.set_light(activeBulb, 'on', False)
-##    b.set_light(slaveBulb, 'on', False)
     else:
         b1.set_light(activeBulb, 'on', True)
-#       b.set_light(slaveBulb, 'on', True)
+
 
 # def upDown(activeBulb, up):
 #     print("upDown")
@@ -298,8 +308,17 @@ def toggleLight20():
     getLightInfo(activeBulb)
     onOff(activeBulb)
 
-btn1 = Button(window, text="1. Stairs 1", command=toggleLight1)
-btn1.grid(column=1, row=1)
+def Up21():
+    print("Up21")
+    activeBulb = 3
+    upDown(activeBulb, True)
+
+def Down21():
+    print("Down21")
+    activeBulb = 3
+    upDown(activeBulb, False)
+
+btn1 = Button(window, text="1. Stairs 1", command=toggleLight1).grid(column=1, row=1)
 btn2 = Button(window, text="2. Stairs 2", command=toggleLight2)
 btn2.grid(column=2, row=1)
 btn3 = Button(window, text="3. Stairs 3", command=toggleLight3)
@@ -340,45 +359,34 @@ btn16 = Button(window, text="16. Hue Ambiance Spot test", command=toggleLight16)
 btn16.grid(column=1, row=8)
 lbl1 = Label(window, text="Test") 
 lbl1.grid(column=1, row=11)
-# 
-def Up21():
-    print("Up21")
-    activeBulb = 3
-    upDown(activeBulb, True)
-
-def Down21():
-    print("Down21")
-    activeBulb = 3
-    upDown(activeBulb, False)
-
 btn21 = Button(window, text="21. Up", command=Up21)
 btn21.grid(column=1, row=10)
 btn21 = Button(window, text="22. Down", command=Down21)
 btn21.grid(column=2, row=10)
 
 def getValue(activeBulb):
-    print("getValue")
+#    print("getValue")
     lights = b1.get_light_objects('id')
 #    actualBrightness = lights[activeBulb].brightness
 #    print("actualBrightness: " + str(actualBrightness))
     
 def changeBrightness(activeBulb, value):
-    print("changeBrightness")
+#    print("changeBrightness")
     
     if activeBulb > 0 :
-        print("Testtt: " + str(activeBulb))
+        if debug > 8: print("Testtt: " + str(activeBulb))
         lights = b1.get_light_objects('id')
         actualBrightness = b1.get_light(activeBulb, "bri")
-        print("actualBrightness: " + str(actualBrightness))
+        
+        if debug > 8:  print("actualBrightness: " + str(actualBrightness))
         if b1.get_light(activeBulb, "on"): 
             lights[activeBulb].brightness = int(value)
 
 def UpdateValue(event):
-    print("Value: " + event)
+    if debug > 8: print("Value: " + event)
     activeBulb = 3
     changeBrightness(activeBulb, event)
 
-dimValue = 40
 
 def printinfo():
     print("activeBulb: " + str(activeBulb))
@@ -387,6 +395,7 @@ def printinfo():
 btntest = Button(window, text="print", command=printinfo)
 btntest.grid(column=1, row=9)
 
+dimValue = 40
 #w = Scale(window, from_=0, to=42)
 w = Scale(window, from_=1, to=255, orient=HORIZONTAL, command=UpdateValue)
 w.set(dimValue) 
@@ -396,88 +405,214 @@ btnQuit = Button(window, text="Quit", command=quit)
 btnQuit.grid(column=5 , row=11)
 
 
+# def toggleLight(activeBulb):
+#     print("toggleLight: " + str(toggleLight))
+#     getLightInfo(activeBulb)
+#     onOff(activeBulb)
+
+
 def changeBrightnessNew(activeBulb):
     print("changeBrightness")
     
     if activeBulb > 0 :
-        print("Testtt: " + str(activeBulb))
+        print("activeBulb: " + str(activeBulb))
         lights = b1.get_light_objects('id')
         actualBrightness = b1.get_light(activeBulb, "bri")
         print("actualBrightness: " + str(actualBrightness))
         
         if b1.get_light(activeBulb, "on"):
             print("Set Brightness")
-            if H3.dimdirection == "up":  
-                print("Set Brightness up")
+            if H3.getdirection(channel) == "up":  
+                print("IF Set Brightness up")
                 if actualBrightness > 246:
                     lights[activeBulb].brightness = 255
-                    H3.dimdirection = "down"
+                    H3.setdirection(18, "down")
                 else:     
                     lights[activeBulb].brightness = int(actualBrightness+10)
             else:
-                print("Set Brightness down")
+                print("ELSE Set Brightness down")
                 if actualBrightness < 11:
                     lights[activeBulb].brightness = 1
-                    H3.dimdirection = "up"
+                    H3.setdirection(18, "up")
+                    print()
                 else:     
                    lights[activeBulb].brightness = int(actualBrightness-10)
+               
 #         else:
 #             H3.dimdirection = "up"
 #             toggleLight3()
 #             lights[activeBulb].brightness = 10
 
+def changeBrightnessChannel(channel):
+    print("changeBrightnessChannel")
+    activeBulb = H3.getlight(channel)    
+    print("activeBulb: " + str(activeBulb))
+                
+    group = H3.getgroup(channel)
+    print("group: " + str(group))
+    lightsingroup = H3.getgrouplights(group)
+    print("lightsingroup :" + str(lightsingroup))
+    
+    actualBrightness = b1.get_light(activeBulb, "bri")
+    print("actualBrightness: " + str(actualBrightness))
+    
+    if debug > 8: print("lights: " + str(lights))
+    
+    if b1.get_light(activeBulb, "on"):
+        lights = b1.get_light_objects('id')
+    
+        print("Set Brightness")
+        if H3.getdirection(channel) == "up":  
+            print("IF Set Brightness up")
+            if actualBrightness > 246:
+                for obj in lightsingroup.split():
+                    lights[int(obj)].brightness = 255
+                H3.setdirection(channel, "down")
+            else:
+                for obj in lightsingroup.split():
+                    print("Obj: " + str(obj) )
+                    print("Light: " + str(lightsingroup[int(obj)])  )
+                    print("lights[int(obj)].brightness: " + str(lights[int(obj)].brightness ))
+                    
+                    lights[int(obj)].brightness = int(actualBrightness+10)
+        else:
+            print("ELSE Set Brightness down")
+            if actualBrightness < 11:
+                for obj in lightsingroup.split():
+                    lightsingroup[int(obj)].brightness = 1
+                H3.setdirection(channel, "up")
+            else:
+                for obj in lightsingroup.split():
+                    lights[int(obj)].brightness = int(actualBrightness-10)
+    
+    
+    
+ 
+def onOffgroup(channel):
+    print("changeBrightnessChannel")
+    activeBulb = H3.getlight(channel)
+    
+    
+    group = H3.getgroup(channel)
+    print("group: " + str(group))
+    lights = H3.getgrouplights(group)
+    
+    if debug > 8: print("lights: " + str(lights))
+    
+    toggleState = b1.get_light(activeBulb, "on")
+    if toggleState:
+        for obj in lights.split():
+            print("lights: " + str( obj ))
+            b1.set_light(int(obj), 'on', False)
+    else:
+        for obj in lights.split():
+            print("lights: " + str( obj ))
+            b1.set_light(int(obj), 'on', True)
+            
+
 def my_callback(channel):
 #     print("Time Fall: " + str(now))
-    print("-----------------------------------------------------")
+    print("---------------------- Start -----------------------------")
     print('This is a edge event callback function!: ' + str(channel ))
-#    print("lightnumber: " + str(myLights.index(channel) ))
-#     print("lightnumber: " + str(myLights[3],[1] ))
+#    print("lightnumber: " + str(myLights.index(channel) ))    
 
-#     print('Edge detected on channel %s'%channel)
-#     print('This is run in a different thread to your main program')
-#     if channel == 17 :
-#         toggleLight2()
-    if not GPIO.input(17):     # if port 25 == 1   
-        if channel == 17 :
-            print("Doorbell Button")
-            b2.play(1)
-        
-    if channel == 18 :    
-        if not GPIO.input(18):     # if port 25 == 1
+    lamptype = b1.get_light(H3.getlight(channel), "type")
+    if lamptype == "On/Off plug-in unit":
+       Dimmable = False 
+    if lamptype == "Dimmable light" or lamptype == "Color temperature light" or lamptype == "Extended color light":
+        Dimmable = True
+    print("lamptype: " + str(lamptype) + ", Dimmable: " + str(Dimmable))
+    
+    if Dimmable:
+        if not GPIO.input(channel):
+            logging.info('Light: ' + str(H3.getlight(channel)))
             global down 
             down = datetime.now()
-            print("Falling edge detected on 25" + str(down))
-            i = 0
-            k = 0
-            n = 0
-            while not GPIO.input(18):
-                time.sleep(0.1)  
-#                 now = datetime.now()
-#                 elapsedTime = now - down
-#                 timedelta60 = down + timedelta(seconds = 1)
-#                print("Falling elapsedTime: " +str(elapsedTime))
-                i += 1
-                k = round(i / 2) 
-                if k > n :
-                    if debug > 9: print("**********************************************************************************i: " + str(k))
-#                     if down > timedelta60 :
-                    changeBrightnessNew(3)
-                    n = k
-        else:                  # if port 25 != 1
-            _running = False
-            if H3.dimdirection == "up":
-                H3.dimdirection = "down"
-            else:
-                H3.dimdirection = "up"
+            print("down: " + str(down))        
+      
+            while not GPIO.input(channel):
+                time.sleep(0.1)
+                changeBrightnessChannel(channel)
+    #             changeBrightnessNew(H3.getlight(channel))            
+        else:
             up = datetime.now()
-            print("Rising edge detected on 18" + str(up))
+                
+            print("Rising edge detected on: " + str(channel) + " - " + str(up))
             elapsedTime = up - down
             timedelta60 = down + timedelta(seconds = 1)
-            print("down: " + str(down))
-            print("down60 : " + str(timedelta60))
+    #         print("down: " + str(down))
+    #         print("down60 : " + str(timedelta60))
+
             if up < timedelta60 :
-                toggleLight3()
+    #             onOff( H3.getlight(channel))
+                onOffgroup(channel)
+                
             print("Time elapsed: " + str(elapsedTime))
+            
+            # Change dim Direction
+            if H3.getdirection == "up":
+                H3.setdirection(channel, "down")
+            else:
+                H3.setdirection(channel, "up")
+    else:
+        if not GPIO.input(channel):
+            logging.info('Light: ' + str(H3.getlight(channel)))
+            onOffgroup(channel)
+
+    print("----------------------  End  -----------------------------")
+
+    
+    
+#     if channel == 17 :
+#         if not GPIO.input(17):     # if port 25 == 1   
+#             print("channel == 17")
+# #             b2.play(1)
+# #            scene_2(2)
+#             for obj in lights.split():
+#                 print("lights: " + str( obj ))
+#                 changeBrightnessNew(int(obj))
+#         else:
+#             for obj in lights.split():
+#                 print("lights: " + str( obj ))
+#                 onOff( H3.getlight(channel))            
+#                 
+#     
+#     if channel == 18 :    
+#         if not GPIO.input(18):     # if port 25 == 1
+#             global down 
+#             down = datetime.now()
+#             print("Falling edge detected on 25" + str(down))
+#             i = 0
+#             k = 0
+#             n = 0
+#             while not GPIO.input(18):
+#                 time.sleep(0.1)  
+# #                 now = datetime.now()
+# #                 elapsedTime = now - down
+# #                 timedelta60 = down + timedelta(seconds = 1)
+# #                print("Falling elapsedTime: " +str(elapsedTime))
+#                 i += 1
+#                 k = round(i / 2) 
+#                 if k > n :
+#                     if debug > 9: print("**********************************************************************************i: " + str(k))
+# #                     if down > timedelta60 :
+#                     changeBrightnessNew(3)
+#                     n = k
+#         else:                  # if port 25 != 1
+#  #           _running = False
+#             if H3.getdirection == "up":
+#                 H3.setdirection(channel, "down")
+#             else:
+#                 H3.setdirection(channel, "up")
+#             up = datetime.now()
+#             print("Rising edge detected on 18" + str(up))
+#             elapsedTime = up - down
+#             timedelta60 = down + timedelta(seconds = 1)
+#             print("down: " + str(down))
+#             print("down60 : " + str(timedelta60))
+#             if up < timedelta60 :
+#                 onOff( H3.getlight(channel))
+#             print("Time elapsed: " + str(elapsedTime))
 
     
 GPIO.add_event_detect(1, GPIO.BOTH, callback=my_callback, bouncetime=200)
@@ -488,7 +623,7 @@ GPIO.add_event_detect(7, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(8, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(9, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(10, GPIO.BOTH, callback=my_callback, bouncetime=200)
-GPIO.add_event_detect(12, GPIO.BOTH, callback=my_callback, bouncetime=200)  # add rising edge detection on a channel
+GPIO.add_event_detect(12, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(13, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(14, GPIO.BOTH, callback=my_callback, bouncetime=200)
 GPIO.add_event_detect(15, GPIO.BOTH, callback=my_callback, bouncetime=200)
