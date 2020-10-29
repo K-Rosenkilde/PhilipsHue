@@ -4,13 +4,13 @@ import time
 import datetime
 
 from itertools import cycle
-from phue import Bridge
+from phue1 import Bridge
 from TestMusic import doorbell
 
 
 print("Start lightsystem")
 
-b1 = Bridge('192.168.0.179')
+b1 = Bridge('192.168.86.94')
 b2 = doorbell()
 
 print("Bell: " + str(b2))
@@ -19,7 +19,8 @@ print("Bell: " + str(b2))
 b1.connect()
 
 print(b1.ip)
-print(b1.config_file_path)
+
+print("File Path: " + b1.config_file_path)
 
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BOARD)
@@ -60,7 +61,7 @@ LED_Scene = 16
 
 def onOff(activeBulb):
     print("onOff " + str(activeBulb))
-    toggleState = b1.get_light("Pineapple", "on")
+    toggleState = b1.get_light(activeBulb, "on")
     print("toggleState: " + str(toggleState))
     if toggleState:
         b1.set_light(activeBulb, 'on', False)
@@ -70,18 +71,18 @@ def onOff(activeBulb):
 #       b.set_light(slaveBulb, 'on', True)
 
 def upDown(activeBulb, up):
-	lights = b.get_light_objects('id')
-	actualBrightness = lights[activeBulb].brightness
-	b.set_light(activeBulb, 'on', True)
+    lights = b.get_light_objects('id')
+    actualBrightness = lights[activeBulb].brightness
+    b.set_light(activeBulb, 'on', True)
 
-	if(up):
-		if (actualBrightness < 250):
-			lights[activeBulb].brightness = actualBrightness + 5
-			lights[slaveBulb].brightness = actualBrightness + 5
-	else:
-		if (actualBrightness > 5):
-			lights[activeBulb].brightness = actualBrightness - 5
-			lights[slaveBulb].brightness = actualBrightness - 5
+    if(up):
+        if (actualBrightness < 250):
+            lights[activeBulb].brightness = actualBrightness + 5
+            lights[slaveBulb].brightness = actualBrightness + 5
+    else:
+        if (actualBrightness > 5):
+            lights[activeBulb].brightness = actualBrightness - 5
+            lights[slaveBulb].brightness = actualBrightness - 5
 
 def scene_1(activeBulb):
     command = {"on": True, "hue": 47103, "colormode": "xy", "xy": [0.3991, 0.4982]}
@@ -107,7 +108,7 @@ def my_callback(channel):
     print('Edge detected on channel %s'%channel)
     print('This is run in a different thread to your main program')
     if channel == 11 : 
-        activeBulb = 3
+        activeBulb = 20
         onOff(activeBulb)
     if channel == 12 :
         b2.play(1)

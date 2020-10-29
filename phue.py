@@ -89,6 +89,7 @@ class Light(object):
 
         self._name = None
         self._on = None
+#        print("self._name" + self._name)
         self._brightness = None
         self._colormode = None
         self._hue = None
@@ -105,20 +106,20 @@ class Light(object):
         self.bridge = bridge
         self.light_id = light_id
 
-        print("self._name" + self._name)
-        print("self._on" + self._on)
-        print("self._brightness" + self._brightness)
-        print("self._colormode" + self._colormode)
-        print("self._hue" + self._hue)
-        print("self._saturation " + self._saturation)
-        print("self._xy " + self._xy) 
-        print("self._colortemp" + self._colortemp)
-        print("self._effect " + self._effect)
-        print("self._alert " + self._alert)
-        print("self.transitiontime " + self.transiontime)
-        print("self._reset_bri_after_on " + self._reset_bri_after_on)
-        print("self._reachable " + self._reachable )
-        print("self._type " + self._type)
+#        print("self._name" + self._name)
+#        print("self._on" + self._on)
+#        print("self._brightness" + self._brightness)
+#        print("self._colormode" + self._colormode)
+#        print("self._hue" + self._hue)
+#        print("self._saturation " + self._saturation)
+#        print("self._xy " + self._xy) 
+#        print("self._colortemp" + self._colortemp)
+#        print("self._effect " + self._effect)
+#        print("self._alert " + self._alert)
+#        print("self.transitiontime " + self.transiontime)
+#        print("self._reset_bri_after_on " + self._reset_bri_after_on)
+#        print("self._reachable " + self._reachable )
+#        print("self._type " + self._type)
         
 
     def __repr__(self):
@@ -729,7 +730,7 @@ class Bridge(object):
         """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
         response = self.request('POST', '/api', registration_request)
-        print("response " + response)
+#       print("response " + response)
         for line in response:
             for key in line:
                 if 'success' in key:
@@ -793,8 +794,8 @@ class Bridge(object):
             lights = self.request('GET', '/api/' + self.username + '/lights/')
             for light in lights:
                 self.lights_by_id[int(light)] = Light(self, int(light))
-                self.lights_by_name[lights[light][
-                    'name']] = self.lights_by_id[int(light)]
+                self.lights_by_name[lights[light]['name']] = self.lights_by_id[int(light)]
+
         if mode == 'id':
             return self.lights_by_id
         if mode == 'name':
@@ -802,6 +803,7 @@ class Bridge(object):
         if mode == 'list':
             # return ligts in sorted id order, dicts have no natural order
             return [self.lights_by_id[id] for id in sorted(self.lights_by_id)]
+
 
     def get_sensor_id_by_name(self, name):
         """ Lookup a sensor id based on string name. Case-sensitive. """
@@ -855,7 +857,7 @@ class Bridge(object):
     def get_light(self, light_id=None, parameter=None):
         """ Gets state by light_id and parameter"""
         
-        print("get_light: " + str(light_id) + " - " + str(parameter) )
+#        print("get_light1: " + str(light_id) + " - " + str(parameter) )
 
 
         if is_string(light_id):
